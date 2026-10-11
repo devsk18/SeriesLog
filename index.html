@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SeriesLog</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand" id="brand">Series<span>Log</span></div>
+    <input id="librarySearch" class="search" type="search" placeholder="Filter your series...">
+    <div class="actions">
+      <button id="btnAdd" class="btn primary">+ Add</button>
+      <button id="btnExport" class="btn" title="Export data">Export</button>
+      <button id="btnImport" class="btn" title="Import data">Import</button>
+      <input id="importFile" type="file" accept="application/json,.json" hidden>
+    </div>
+  </header>
+
+  <main>
+    <section id="viewLibrary" class="view">
+      <div id="libraryGrid" class="grid"></div>
+      <div id="emptyState" class="empty hidden">
+        <p>No series yet.</p>
+        <p class="muted">Click <strong>+ Add</strong> to enter a series (id, seasons and episodes per season).</p>
+      </div>
+    </section>
+
+    <section id="viewDetail" class="view hidden">
+      <button id="btnBack" class="btn ghost back">&larr; Back</button>
+
+      <div class="detail-head">
+        <img id="detailPoster" class="poster big" alt="" loading="lazy">
+        <div class="detail-info">
+          <h1 id="detailTitle"></h1>
+          <div id="detailMeta" class="muted"></div>
+          <div id="detailStatus" class="status-line"></div>
+          <div class="progress"><div id="detailProgressBar" class="progress-bar"></div></div>
+          <div id="detailProgressText" class="muted small"></div>
+          <div class="detail-actions">
+            <button id="btnEditSeries" class="btn">Edit</button>
+            <button id="btnResetSeries" class="btn">Reset progress</button>
+            <button id="btnRemoveSeries" class="btn danger">Remove</button>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="section-title">Episodes</h2>
+      <div id="seasonTabs" class="tabs"></div>
+      <div id="episodeGrid" class="episode-grid"></div>
+      <p id="episodeLegend" class="legend muted small">
+        Tap an episode to toggle watched. <span class="dot watched-dot"></span> watched
+        <span class="dot current-dot"></span> selected
+      </p>
+
+      <div class="builder">
+        <h2 class="section-title">Generate link</h2>
+        <div class="builder-controls">
+          <label>Server
+            <select id="serverSelect"></select>
+          </label>
+          <label>Season
+            <select id="seasonSelect"></select>
+          </label>
+          <label>Episode
+            <select id="episodeSelect"></select>
+          </label>
+        </div>
+        <div id="episodeName" class="muted small"></div>
+        <div class="link-preview">
+          <input id="linkOutput" type="text" readonly>
+        </div>
+        <div class="builder-actions">
+          <button id="btnCopy" class="btn primary">Copy link</button>
+          <button id="btnOpen" class="btn">Open</button>
+          <button id="btnWatchedNext" class="btn">Mark watched &amp; next</button>
+          <button id="btnToggleWatched" class="btn">Toggle watched</button>
+        </div>
+        <p class="hint muted small">
+          Incognito: <strong>laptop</strong> press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd> then paste &middot;
+          <strong>mobile</strong> long-press the link &rarr; <em>Open link in new incognito window</em>.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Add series modal -->
+  <div id="modalAdd" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2>Add series</h2>
+        <button class="btn icon" data-close="modalAdd">&times;</button>
+      </div>
+      <div class="tabs" id="addTabs">
+        <button class="tab active" data-tab="manual">Manual</button>
+        <button class="tab" data-tab="link">From link</button>
+        <button class="tab" data-tab="lookup">Lookup TVmaze</button>
+      </div>
+
+      <div class="tab-panel" data-panel="manual">
+        <label>Streamex id *
+          <input id="mId" type="text" placeholder="1408">
+        </label>
+        <label>Title *
+          <input id="mTitle" type="text" placeholder="Series name">
+        </label>
+        <label>Poster URL (optional)
+          <input id="mPoster" type="text" placeholder="https://...">
+        </label>
+        <label>Number of seasons *
+          <input id="mSeasons" type="number" min="1" value="1">
+        </label>
+        <label>Episodes per season *
+          <input id="mEpisodes" type="text" placeholder="10  or  10,10,8">
+        </label>
+        <p class="muted small">Use one number for all seasons, or a comma list (one per season).</p>
+        <button id="btnLookupByTitle" class="btn">Lookup on TVmaze by title</button>
+        <button id="btnAddManual" class="btn primary">Add series</button>
+      </div>
+
+      <div class="tab-panel hidden" data-panel="link">
+        <label>Streamex link
+          <input id="pasteLink" type="text" placeholder="https://www.streamex.hn/watch/tv/1408?s=4&e=7&server=vidsrc">
+        </label>
+        <label>Title (optional)
+          <input id="pasteTitle" type="text" placeholder="Series name">
+        </label>
+        <p class="muted small">The id, season, episode and server are read from the link, then you fill in the season/episode counts.</p>
+        <button id="btnAddFromLink" class="btn primary">Use this link</button>
+      </div>
+
+      <div class="tab-panel hidden" data-panel="lookup">
+        <label>Search title
+          <div class="row">
+            <input id="lookupQuery" type="text" placeholder="Series name...">
+            <button id="btnLookup" class="btn">Search</button>
+          </div>
+        </label>
+        <div id="lookupResults" class="search-results"></div>
+        <p id="lookupHint" class="muted small">Free lookup from TVmaze &middot; no API key needed. Picks fill the Manual form (episode names included).</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit series modal -->
+  <div id="modalEdit" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2>Edit series</h2>
+        <button class="btn icon" data-close="modalEdit">&times;</button>
+      </div>
+      <label>Title
+        <input id="eTitle" type="text">
+      </label>
+      <label>Poster URL
+        <input id="ePoster" type="text">
+      </label>
+      <label>Number of seasons
+        <input id="eSeasons" type="number" min="1">
+      </label>
+      <label>Episodes per season
+        <input id="eEpisodes" type="text" placeholder="10,10,8">
+      </label>
+      <label>Server default
+        <select id="eServer"></select>
+      </label>
+      <div class="modal-actions">
+        <button id="btnEditSave" class="btn primary">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/tvmaze.js"></script>
+  <script src="js/link.js"></script>
+  <script src="js/ui.js"></script>
+</body>
+</html>
