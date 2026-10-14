@@ -7,7 +7,8 @@
   const uiState = {
     currentSeriesId: null,
     selected: { s: 1, e: 1 },
-    serverId: CONFIG.defaultServer().id
+    serverId: CONFIG.defaultServer().id,
+    libraryTab: "ongoing"
   };
   let pendingLink = null;
   let pendingSeries = null;
@@ -58,15 +59,28 @@
   }
 
   /* ---------- library ---------- */
+  function isCompleted(sr) {
+    return sr.status === CONFIG.STATUS.COMPLETED;
+  }
+
   function renderLibrary() {
     const grid = $("libraryGrid");
     const filter = ($("librarySearch").value || "").toLowerCase();
+    const wantCompleted = uiState.libraryTab === "completed";
     const list = Store.seriesList().filter(function (sr) {
+      if (isCompleted(sr) !== wantCompleted) return false;
       return !filter || (sr.title || "").toLowerCase().indexOf(filter) !== -1;
+    });
+
+    document.querySelectorAll("#libraryTabs .tab").forEach(function (tab) {
+      tab.classList.toggle("active", tab.getAttribute("data-tab") === uiState.libraryTab);
     });
 
     grid.innerHTML = "";
     $("emptyState").classList.toggle("hidden", list.length > 0);
+    $("emptyText").textContent = filter
+      ? "No matching series."
+      : (wantCompleted ? "No completed series yet." : "No ongoing series yet.");
 
     list.forEach(function (sr) {
       const total = Store.totalEpisodes(sr);
@@ -132,6 +146,7 @@
       '<span class="badge ' + meta.cls + '">' + meta.icon + " " + meta.label + '</span>';
     $("detailProgressBar").style.width = pct + "%";
     $("detailProgressText").textContent = watched + " / " + total + " watched (" + pct + "%)";
+    $("btnMarkCompleted").classList.toggle("hidden", isCompleted(sr));
 
     // keep the current selection valid for this series
     const seasons = sortedSeasons(sr);
@@ -277,6 +292,18 @@
       '<span class="badge ' + meta.cls + '">' + meta.icon + " " + meta.label + '</span>';
     $("detailProgressBar").style.width = pct + "%";
     $("detailProgressText").textContent = watched + " / " + total + " watched (" + pct + "%)";
+    $("btnMarkCompleted").classList.toggle("hidden", isCompleted(sr));
+  }
+
+  function markCompleted() {
+    const sr = Store.getSeries(uiState.currentSeriesId);
+    if (!sr || isCompleted(sr)) return;
+    if (!confirm('Mark every episode of "' + sr.title + '" as watched?')) return;
+    const updated = Store.markCompleted(sr.id);
+    const next = Store.nextEpisode(updated);
+    selectEpisode(next.s, next.e, true);
+    renderDetailHeader();
+    toast("Marked as completed", "ok");
   }
 
   function updateLink() {
@@ -404,6 +431,7 @@
       title: title,
       poster: poster,
       seasons: seasons,
+      watched: $("mCompleted").checked ? Store.allWatchedMap(seasons) : {},
       current: pendingLink && pendingLink.s
         ? { s: pendingLink.s, e: pendingLink.e || 1 }
         : { s: 1, e: 1 },
@@ -430,6 +458,7 @@
     $("mPoster").value = "";
     $("mSeasons").value = "1";
     $("mEpisodes").value = "";
+    $("mCompleted").checked = false;
   }
 
   function openEdit() {
@@ -562,6 +591,12 @@
 
     $("brand").addEventListener("click", backToLibrary);
     $("librarySearch").addEventListener("input", renderLibrary);
+    document.querySelectorAll("#libraryTabs .tab").forEach(function (tab) {
+      tab.addEventListener("click", function () {
+        uiState.libraryTab = tab.getAttribute("data-tab");
+        renderLibrary();
+      });
+    });
     $("btnAdd").addEventListener("click", function () {
       activateTab("manual");
       openModal("modalAdd");
@@ -575,6 +610,7 @@
 
     $("btnBack").addEventListener("click", backToLibrary);
     $("btnEditSeries").addEventListener("click", openEdit);
+    $("btnMarkCompleted").addEventListener("click", markCompleted);
     $("btnResetSeries").addEventListener("click", resetSeries);
     $("btnRemoveSeries").addEventListener("click", removeSeries);
 

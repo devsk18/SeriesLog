@@ -176,6 +176,16 @@ main { padding: 18px; max-width: 1100px; margin: 0 auto; }
 .tab:hover { color: var(--text); }
 .tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  color: var(--text);
+  cursor: pointer;
+}
+.check input { width: auto; }
+
 /* ---------- Episode grid ---------- */
 .episode-grid {
   display: grid;

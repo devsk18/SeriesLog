@@ -120,6 +120,16 @@ const Store = (function () {
     return !!sr.watched[s + ":" + e];
   }
 
+  /** Watched map with every episode of every season marked watched. */
+  function allWatchedMap(seasons) {
+    const watched = {};
+    Object.keys(seasons).forEach(function (k) {
+      const count = seasons[k].count || 0;
+      for (let e = 1; e <= count; e++) watched[k + ":" + e] = true;
+    });
+    return watched;
+  }
+
   /** First unwatched episode in order, else the last episode. */
   function nextEpisode(sr) {
     const seasons = Object.keys(sr.seasons)
@@ -179,6 +189,13 @@ const Store = (function () {
     save();
   }
 
+  /** Mark a series complete by filling in every episode as watched. */
+  function markCompleted(id) {
+    const sr = state.series[String(id)];
+    if (!sr) return null;
+    return updateSeries(id, { watched: allWatchedMap(sr.seasons) });
+  }
+
   /* ---------- import / export ---------- */
   function exportJSON() {
     return JSON.stringify(state, null, 2);
@@ -212,6 +229,8 @@ const Store = (function () {
     computeStatus: computeStatus,
     nextEpisode: nextEpisode,
     isWatched: isWatched,
+    allWatchedMap: allWatchedMap,
+    markCompleted: markCompleted,
     exportJSON: exportJSON,
     importJSON: importJSON,
     save: save

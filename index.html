@@ -20,9 +20,13 @@
 
   <main>
     <section id="viewLibrary" class="view">
+      <div id="libraryTabs" class="tabs">
+        <button class="tab active" data-tab="ongoing">Ongoing</button>
+        <button class="tab" data-tab="completed">Completed</button>
+      </div>
       <div id="libraryGrid" class="grid"></div>
       <div id="emptyState" class="empty hidden">
-        <p>No series yet.</p>
+        <p id="emptyText">No series yet.</p>
         <p class="muted">Click <strong>+ Add</strong> to enter a series (id, seasons and episodes per season).</p>
       </div>
     </section>
@@ -40,6 +44,7 @@
           <div id="detailProgressText" class="muted small"></div>
           <div class="detail-actions">
             <button id="btnEditSeries" class="btn">Edit</button>
+            <button id="btnMarkCompleted" class="btn">Mark completed</button>
             <button id="btnResetSeries" class="btn">Reset progress</button>
             <button id="btnRemoveSeries" class="btn danger">Remove</button>
           </div>
@@ -115,6 +120,10 @@
           <input id="mEpisodes" type="text" placeholder="10  or  10,10,8">
         </label>
         <p class="muted small">Use one number for all seasons, or a comma list (one per season).</p>
+        <label class="check">
+          <input id="mCompleted" type="checkbox">
+          <span>Already completed (mark all episodes watched)</span>
+        </label>
         <button id="btnLookupByTitle" class="btn">Lookup on TVmaze by title</button>
         <button id="btnAddManual" class="btn primary">Add series</button>
       </div>
